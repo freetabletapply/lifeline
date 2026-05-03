@@ -19,7 +19,7 @@
   function qs(s,r){return(r||document).querySelector(s)}
   function qsa(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))}
   function slug(){return (location.pathname||"/").replace(/^\/+|\/+$/g,"") || "home"}
-  function isTrustPage(){return /^(about|contact|privacy-policy|terms|disclaimer|editorial-policy)$/i.test(slug())}
+  function isTrustPage(){return false}
   function isBotPage(){return /google[a-z0-9]+\.html$/i.test(location.pathname||"")}
 
   function parseSizes(v){
@@ -57,17 +57,17 @@
   }
 
   function injectAutoAds(){
-    if(isBotPage() || isTrustPage())return;
+    if(isBotPage())return;
     var main=qs("#main")||qs("main");
     if(!main)return;
 
     var current=qsa("[data-ad-slot='true']",main).length;
     var pathSlug=slug();
-    var maxSlots = pathSlug === "home" ? 5 : 7;
-    if(document.body.classList.contains("result-page")) maxSlots=6;
+    var maxSlots = 8;
+    if(document.body.classList.contains("result-page")) maxSlots=8;
 
     var targets=[];
-    qsa(".content-section,.provider-strip,.next-panels,.warning-box,.faq-block,.internal-links,.source-box,.result-card,.side-card,.article-hero,.intro-panel",main).forEach(function(el){
+    qsa(".hero,.article-hero,.result-hero,.checker-shell,.intro-panel,.content-section,.provider-strip,.next-panels,.warning-box,.faq-block,.internal-links,.source-box,.result-card,.side-card,.state-grid,.toc-card",main).forEach(function(el){
       if(el.closest(".sticky-cta-card"))return;
       if(hasAdNear(el))return;
       targets.push(el);
@@ -75,12 +75,21 @@
 
     var added=0;
     for(var i=0;i<targets.length && current<maxSlots;i++){
-      if(i % 2 !== 1 && current >= 4) continue;
       var spec=nextAdSpec(added);
       var id="adplus-auto-"+pathSlug.replace(/[^a-z0-9]+/gi,"-")+"-"+(added+1);
       targets[i].insertAdjacentElement("afterend",makeAd(id,spec.unit,spec.sizes,spec.cls));
       current++;
       added++;
+    }
+
+    if(current < 3){
+      for(var j=current;j<3;j++){
+        var fallbackSpec=nextAdSpec(added);
+        var fallbackId="adplus-fallback-"+pathSlug.replace(/[^a-z0-9]+/gi,"-")+"-"+(added+1);
+        main.appendChild(makeAd(fallbackId,fallbackSpec.unit,fallbackSpec.sizes,fallbackSpec.cls));
+        added++;
+        current++;
+      }
     }
   }
 
